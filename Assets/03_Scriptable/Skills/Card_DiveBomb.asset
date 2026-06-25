@@ -16,5 +16,6 @@ MonoBehaviour:
   description: Plunge from above for heavy damage.
   art: {fileID: 0}
   type: 0
+  cost: 2
   power: 42
   targetType: 0

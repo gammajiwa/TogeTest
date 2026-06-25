@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 using Spine.Unity;
 using Toge.Core;
 using Toge.Data;
@@ -12,10 +13,10 @@ namespace Toge.Battle
     public class BattleSpawner : MonoBehaviour
     {
         [SerializeField] private BattleManager _battle;
-        [SerializeField] private BattleUI _ui;
         [SerializeField] private PartyConfigSO _party;
         [SerializeField] private EncounterSO _encounter;
         [SerializeField] private EncounterAnchorSO _activeEncounter;
+        [SerializeField] private TMP_FontAsset _font;
         [SerializeField] private string _bootScene = "Boot";
         [SerializeField] private float _playerX = -3.5f;
         [SerializeField] private float _enemyX = 3.5f;
@@ -47,12 +48,14 @@ namespace Toge.Battle
             List<BattleUnit> players = SpawnSide(PartyData(), _playerX, true, BattleTeam.Player);
             List<BattleUnit> enemies = SpawnSide(EnemyData(encounter), _enemyX, false, BattleTeam.Enemy);
 
-            if (_ui != null && players.Count > 0 && enemies.Count > 0)
-                _ui.Bind(players[0], enemies[0]);
+            BattleUnit player = players.Count > 0 ? players[0] : null;
+            List<CardSO> deck = player != null && player.Data is PlayerDataSO data
+                ? data.cards
+                : new List<CardSO>();
 
             yield return null;
 
-            if (_battle != null) _battle.Begin(players, enemies);
+            if (_battle != null && player != null) _battle.Begin(player, enemies, deck);
         }
 
         private List<EntityDataSO> PartyData()
@@ -109,6 +112,12 @@ namespace Toge.Battle
 
             var unit = go.AddComponent<BattleUnit>();
             unit.Init(data, team);
+
+            float headHeight = renderer != null && renderer.bounds.size.y > 0.01f
+                ? renderer.bounds.size.y + 0.4f
+                : 2.6f;
+            go.AddComponent<UnitHealthBar>().Init(unit, headHeight, _font);
+
             return unit;
         }
     }

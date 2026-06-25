@@ -10,118 +10,182 @@ namespace Toge.Battle
 {
     public class BattleManager : MonoBehaviour
     {
-        [SerializeField] private List<BattleUnit> _playerUnits = new();
-        [SerializeField] private List<BattleUnit> _enemyUnits = new();
         [SerializeField] private BattleResultEventChannelSO _resultChannel;
-        [SerializeField] private float _turnDelay = 0.6f;
+        [SerializeField] private int _maxEnergy = 3;
+        [SerializeField] private int _handSize = 5;
+        [SerializeField] private float _enemyTurnDelay = 0.7f;
+        [SerializeField] private float _drawDelay = 0.1f;
 
-        private readonly List<BattleUnit> _all = new();
-        private BattleAction _submitted;
+        private BattleUnit _player;
+        private readonly List<BattleUnit> _enemies = new();
+        private readonly List<CardInstance> _drawPile = new();
+        private readonly List<CardInstance> _hand = new();
+        private readonly List<CardInstance> _discardPile = new();
 
-        public event Action<BattleUnit> TurnStarted;
+        private int _energy;
+        private int _block;
+        private bool _endTurnRequested;
+
         public event Action StateChanged;
         public event Action<BattleResult> BattleEnded;
+        public event Action<bool> PlayerTurnChanged;
 
-        public BattleUnit ActingUnit { get; private set; }
-        public bool AwaitingInput { get; private set; }
+        public int Energy => _energy;
+        public int MaxEnergy => _maxEnergy;
+        public int Block => _block;
+        public int DrawCount => _drawPile.Count;
+        public int DiscardCount => _discardPile.Count;
+        public bool IsPlayerTurn { get; private set; }
+        public BattleUnit Player => _player;
+        public IReadOnlyList<BattleUnit> Enemies => _enemies;
+        public IReadOnlyList<CardInstance> Hand => _hand;
 
-        public void Begin(IEnumerable<BattleUnit> players, IEnumerable<BattleUnit> enemies)
+        public void Begin(BattleUnit player, IEnumerable<BattleUnit> enemies, IEnumerable<CardSO> deck)
         {
-            _playerUnits = new List<BattleUnit>(players);
-            _enemyUnits = new List<BattleUnit>(enemies);
-            StartCoroutine(RunBattle());
-        }
+            _player = player;
+            _enemies.Clear();
+            _enemies.AddRange(enemies);
 
-        public void SubmitAction(BattleAction action) => _submitted = action;
+            _drawPile.Clear();
+            _hand.Clear();
+            _discardPile.Clear();
+            foreach (CardSO card in deck)
+                if (card != null) _drawPile.Add(new CardInstance(card));
+            Shuffle(_drawPile);
+
+            StartCoroutine(Run());
+        }
 
         public BattleUnit FirstLivingEnemy()
         {
-            foreach (var unit in _enemyUnits)
-                if (unit.IsAlive) return unit;
+            foreach (BattleUnit enemy in _enemies)
+                if (enemy.IsAlive) return enemy;
             return null;
         }
 
-        private IEnumerator RunBattle()
+        public bool PlayCard(CardInstance card, BattleUnit target)
         {
-            _all.Clear();
-            _all.AddRange(_playerUnits);
-            _all.AddRange(_enemyUnits);
-            StateChanged?.Invoke();
+            if (!IsPlayerTurn || card == null || !_hand.Contains(card)) return false;
+            if (_energy < card.Data.cost) return false;
 
-            while (!IsDefeated(BattleTeam.Player) && !IsDefeated(BattleTeam.Enemy))
+            if (card.Data.type == CardType.Defend)
             {
-                foreach (var unit in TurnOrder())
-                {
-                    if (!unit.IsAlive) continue;
-
-                    ActingUnit = unit;
-                    TurnStarted?.Invoke(unit);
-
-                    BattleAction action;
-                    if (unit.Team == BattleTeam.Player)
-                    {
-                        AwaitingInput = true;
-                        _submitted = null;
-                        yield return new WaitUntil(() => _submitted != null);
-                        AwaitingInput = false;
-                        action = _submitted;
-                    }
-                    else
-                    {
-                        action = DecideEnemyAction(unit);
-                    }
-
-                    if (action != null) Execute(action);
-                    StateChanged?.Invoke();
-                    yield return new WaitForSeconds(_turnDelay);
-
-                    if (IsDefeated(BattleTeam.Player) || IsDefeated(BattleTeam.Enemy)) break;
-                }
+                _block += card.Data.power;
+            }
+            else
+            {
+                if (target == null || !target.IsAlive) target = FirstLivingEnemy();
+                if (target != null) target.TakeDamage(Mathf.Max(1, card.Data.power));
             }
 
-            BattleResult result = IsDefeated(BattleTeam.Enemy) ? BattleResult.Win : BattleResult.Lose;
+            _energy -= card.Data.cost;
+            _hand.Remove(card);
+            _discardPile.Add(card);
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        public void EndTurn()
+        {
+            if (IsPlayerTurn) _endTurnRequested = true;
+        }
+
+        private IEnumerator Run()
+        {
+            StateChanged?.Invoke();
+
+            while (!IsOver())
+            {
+                _block = 0;
+                _energy = _maxEnergy;
+                yield return DrawToHandSize();
+
+                IsPlayerTurn = true;
+                PlayerTurnChanged?.Invoke(true);
+                StateChanged?.Invoke();
+
+                _endTurnRequested = false;
+                yield return new WaitUntil(() => _endTurnRequested || AllEnemiesDead());
+
+                IsPlayerTurn = false;
+                PlayerTurnChanged?.Invoke(false);
+                DiscardHand();
+                StateChanged?.Invoke();
+                if (IsOver()) break;
+
+                yield return EnemyTurn();
+                if (IsOver()) break;
+            }
+
+            BattleResult result = AllEnemiesDead() ? BattleResult.Win : BattleResult.Lose;
             Debug.Log($"[Battle] {result}");
             BattleEnded?.Invoke(result);
             if (_resultChannel != null) _resultChannel.RaiseEvent(result);
         }
 
-        private List<BattleUnit> TurnOrder()
+        private IEnumerator EnemyTurn()
         {
-            var alive = _all.FindAll(u => u.IsAlive);
-            alive.Sort((a, b) => b.Speed.CompareTo(a.Speed));
-            return alive;
+            foreach (BattleUnit enemy in _enemies)
+            {
+                if (!enemy.IsAlive) continue;
+
+                yield return new WaitForSeconds(_enemyTurnDelay);
+
+                int incoming = enemy.Attack;
+                int absorbed = Mathf.Min(_block, incoming);
+                _block -= absorbed;
+                int damage = incoming - absorbed;
+                if (damage > 0) _player.TakeDamage(damage);
+
+                Debug.Log($"[Battle] {enemy.DisplayName} attacks for {incoming} (blocked {absorbed})");
+                StateChanged?.Invoke();
+                if (!_player.IsAlive) yield break;
+            }
         }
 
-        private BattleAction DecideEnemyAction(BattleUnit unit)
+        private IEnumerator DrawToHandSize()
         {
-            List<BattleUnit> targets = LivingOpponents(unit.Team);
-            if (targets.Count == 0) return null;
+            while (_hand.Count < _handSize)
+            {
+                if (_drawPile.Count == 0)
+                {
+                    if (_discardPile.Count == 0) yield break;
+                    ReshuffleDiscardIntoDraw();
+                }
 
-            if (unit.Data is EnemyDataSO enemy && enemy.strategy != null)
-                return enemy.strategy.DecideAction(unit, targets);
-
-            return new BattleAction(BattleActionType.Attack, unit, targets[0]);
+                int top = _drawPile.Count - 1;
+                CardInstance card = _drawPile[top];
+                _drawPile.RemoveAt(top);
+                _hand.Add(card);
+                StateChanged?.Invoke();
+                yield return new WaitForSeconds(_drawDelay);
+            }
         }
 
-        private void Execute(BattleAction action)
+        private void DiscardHand()
         {
-            if (action.Type == BattleActionType.Defend) return;
-            if (action.Target == null || !action.Target.IsAlive) return;
-
-            int power = action.Type == BattleActionType.Card && action.Card != null
-                ? action.Card.power
-                : action.Actor.Attack;
-
-            int damage = Mathf.Max(1, power - action.Target.Defense / 2);
-            action.Target.TakeDamage(damage);
-
-            string label = action.Type == BattleActionType.Card && action.Card != null ? action.Card.cardName : "Attack";
-            Debug.Log($"[Battle] {action.Actor.DisplayName} plays {label} on {action.Target.DisplayName}: {damage} " +
-                      $"(HP {action.Target.CurrentHealth}/{action.Target.MaxHealth})");
+            _discardPile.AddRange(_hand);
+            _hand.Clear();
         }
 
-        private List<BattleUnit> LivingOpponents(BattleTeam team) => _all.FindAll(u => u.Team != team && u.IsAlive);
+        private void ReshuffleDiscardIntoDraw()
+        {
+            _drawPile.AddRange(_discardPile);
+            _discardPile.Clear();
+            Shuffle(_drawPile);
+        }
 
-        private bool IsDefeated(BattleTeam team) => !_all.Exists(u => u.Team == team && u.IsAlive);
+        private static void Shuffle(List<CardInstance> list)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+        }
+
+        private bool AllEnemiesDead() => !_enemies.Exists(e => e.IsAlive);
+
+        private bool IsOver() => AllEnemiesDead() || _player == null || !_player.IsAlive;
     }
 }

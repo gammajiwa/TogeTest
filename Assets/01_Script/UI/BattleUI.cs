@@ -9,18 +9,15 @@ namespace Toge.Battle
     public class BattleUI : MonoBehaviour
     {
         [SerializeField] private BattleManager _battle;
-        [SerializeField] private BattleUnit _player;
-        [SerializeField] private BattleUnit _enemy;
-
-        [Header("HP Bars")]
-        [SerializeField] private Image _playerHpFill;
-        [SerializeField] private Image _enemyHpFill;
-        [SerializeField] private TextMeshProUGUI _playerHpText;
-        [SerializeField] private TextMeshProUGUI _enemyHpText;
-
-        [Header("Cards")]
         [SerializeField] private RectTransform _cardHand;
         [SerializeField] private TMP_FontAsset _font;
+
+        [Header("Status")]
+        [SerializeField] private TextMeshProUGUI _energyText;
+        [SerializeField] private TextMeshProUGUI _blockText;
+        [SerializeField] private TextMeshProUGUI _drawText;
+        [SerializeField] private TextMeshProUGUI _discardText;
+        [SerializeField] private Button _endTurnButton;
 
         [Header("Result")]
         [SerializeField] private GameObject _resultObject;
@@ -30,109 +27,125 @@ namespace Toge.Battle
         {
             if (_battle == null) return;
             _battle.StateChanged += Refresh;
-            _battle.TurnStarted += OnTurnStarted;
+            _battle.PlayerTurnChanged += OnPlayerTurnChanged;
             _battle.BattleEnded += OnBattleEnded;
+            if (_endTurnButton != null) _endTurnButton.onClick.AddListener(OnEndTurn);
         }
 
         private void OnDisable()
         {
             if (_battle == null) return;
             _battle.StateChanged -= Refresh;
-            _battle.TurnStarted -= OnTurnStarted;
+            _battle.PlayerTurnChanged -= OnPlayerTurnChanged;
             _battle.BattleEnded -= OnBattleEnded;
+            if (_endTurnButton != null) _endTurnButton.onClick.RemoveListener(OnEndTurn);
         }
 
         private void Start()
         {
-            ShowHand(false);
             if (_resultObject != null) _resultObject.SetActive(false);
-        }
-
-        public void Bind(BattleUnit player, BattleUnit enemy)
-        {
-            _player = player;
-            _enemy = enemy;
-            BuildHand();
             Refresh();
-            ShowHand(false);
         }
 
-        private void BuildHand()
+        private void OnEndTurn() => _battle?.EndTurn();
+
+        private void OnPlayerTurnChanged(bool playerTurn)
         {
-            if (_cardHand == null) return;
-            PlayerDataSO data = _player != null ? _player.Data as PlayerDataSO : null;
-            if (data == null) return;
-
-            for (int i = _cardHand.childCount - 1; i >= 0; i--)
-                Destroy(_cardHand.GetChild(i).gameObject);
-
-            foreach (CardSO card in data.cards)
-            {
-                if (card == null) continue;
-                CreateCardButton(card);
-            }
-        }
-
-        private void CreateCardButton(CardSO card)
-        {
-            var go = new GameObject("Card_" + card.cardName, typeof(RectTransform));
-            go.transform.SetParent(_cardHand, false);
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(160, 210);
-
-            var image = go.AddComponent<Image>();
-            image.color = card.type == CardType.Defend ? new Color(0.28f, 0.45f, 0.62f) : new Color(0.5f, 0.3f, 0.52f);
-
-            var button = go.AddComponent<Button>();
-            button.onClick.AddListener(() => PlayCard(card));
-
-            var labelGO = new GameObject("Label", typeof(RectTransform));
-            labelGO.transform.SetParent(go.transform, false);
-            var label = labelGO.AddComponent<TextMeshProUGUI>();
-            label.font = _font;
-            label.text = card.cardName + "\n\n" + (card.type == CardType.Defend ? "GUARD" : "PWR " + card.power);
-            label.fontSize = 22;
-            label.alignment = TextAlignmentOptions.Top;
-            label.color = Color.white;
-            var lrt = label.GetComponent<RectTransform>();
-            lrt.anchorMin = Vector2.zero;
-            lrt.anchorMax = Vector2.one;
-            lrt.offsetMin = new Vector2(10, 10);
-            lrt.offsetMax = new Vector2(-10, -10);
-        }
-
-        private void PlayCard(CardSO card)
-        {
-            if (_battle == null || _battle.ActingUnit == null) return;
-
-            BattleActionType type = card.type == CardType.Defend ? BattleActionType.Defend : BattleActionType.Card;
-            BattleUnit target = _battle.FirstLivingEnemy();
-            _battle.SubmitAction(new BattleAction(type, _battle.ActingUnit, target, card));
-            ShowHand(false);
-        }
-
-        private void OnTurnStarted(BattleUnit unit) => ShowHand(unit.Team == BattleTeam.Player);
-
-        private void ShowHand(bool show)
-        {
-            if (_cardHand != null) _cardHand.gameObject.SetActive(show);
+            if (_endTurnButton != null) _endTurnButton.interactable = playerTurn;
+            Refresh();
         }
 
         private void Refresh()
         {
-            SetBar(_playerHpFill, _playerHpText, _player);
-            SetBar(_enemyHpFill, _enemyHpText, _enemy);
+            if (_battle == null) return;
+
+            if (_energyText != null) _energyText.text = $"{_battle.Energy}/{_battle.MaxEnergy}";
+            if (_blockText != null) _blockText.text = _battle.Block > 0 ? $"BLOCK {_battle.Block}" : string.Empty;
+            if (_drawText != null) _drawText.text = $"Draw: {_battle.DrawCount}";
+            if (_discardText != null) _discardText.text = $"Discard: {_battle.DiscardCount}";
+
+            RebuildHand();
         }
 
-        private static void SetBar(Image fill, TextMeshProUGUI text, BattleUnit unit)
+        private void RebuildHand()
         {
-            if (unit == null) return;
-            if (fill != null) fill.fillAmount = unit.MaxHealth > 0 ? (float)unit.CurrentHealth / unit.MaxHealth : 0f;
-            if (text != null) text.text = $"{unit.CurrentHealth}/{unit.MaxHealth}";
+            if (_cardHand == null) return;
+
+            for (int i = _cardHand.childCount - 1; i >= 0; i--)
+                Destroy(_cardHand.GetChild(i).gameObject);
+
+            if (!_battle.IsPlayerTurn) return;
+
+            foreach (CardInstance card in _battle.Hand)
+                CreateCardButton(card);
+        }
+
+        private void CreateCardButton(CardInstance card)
+        {
+            CardSO data = card.Data;
+            bool affordable = _battle.Energy >= data.cost;
+
+            var go = new GameObject("Card_" + data.cardName, typeof(RectTransform));
+            go.transform.SetParent(_cardHand, false);
+            go.GetComponent<RectTransform>().sizeDelta = new Vector2(150f, 200f);
+
+            var image = go.AddComponent<Image>();
+            Color tint = data.type == CardType.Defend ? new Color(0.28f, 0.45f, 0.62f) : new Color(0.5f, 0.3f, 0.52f);
+            image.color = affordable ? tint : new Color(0.22f, 0.22f, 0.24f, 0.95f);
+
+            var button = go.AddComponent<Button>();
+            button.interactable = affordable;
+            button.onClick.AddListener(() => PlayCard(card));
+
+            AddCost(go.transform, data.cost);
+            AddLabel(go.transform, data);
+        }
+
+        private void AddCost(Transform parent, int cost)
+        {
+            var go = new GameObject("Cost", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var text = go.AddComponent<TextMeshProUGUI>();
+            text.font = _font;
+            text.text = cost.ToString();
+            text.fontSize = 30f;
+            text.color = new Color(1f, 0.88f, 0.4f);
+            text.alignment = TextAlignmentOptions.Center;
+            RectTransform rt = text.rectTransform;
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(40f, 40f);
+            rt.anchoredPosition = new Vector2(6f, -6f);
+        }
+
+        private void AddLabel(Transform parent, CardSO data)
+        {
+            var go = new GameObject("Label", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var text = go.AddComponent<TextMeshProUGUI>();
+            text.font = _font;
+            string effect = data.type == CardType.Defend ? $"Block {data.power}" : $"Deal {data.power}";
+            text.text = $"{data.cardName}\n\n{effect}";
+            text.fontSize = 20f;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = Color.white;
+            RectTransform rt = text.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = new Vector2(8f, 8f);
+            rt.offsetMax = new Vector2(-8f, -26f);
+        }
+
+        private void PlayCard(CardInstance card)
+        {
+            if (_battle == null) return;
+            _battle.PlayCard(card, _battle.FirstLivingEnemy());
         }
 
         private void OnBattleEnded(BattleResult result)
         {
-            ShowHand(false);
+            RebuildHand();
             if (_resultObject != null) _resultObject.SetActive(true);
             if (_resultText != null) _resultText.text = result == BattleResult.Win ? "VICTORY!" : "DEFEAT";
         }

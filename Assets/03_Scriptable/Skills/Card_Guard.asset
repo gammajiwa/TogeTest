@@ -16,5 +16,6 @@ MonoBehaviour:
   description: Brace for impact.
   art: {fileID: 0}
   type: 1
-  power: 0
+  cost: 1
+  power: 15
   targetType: 0

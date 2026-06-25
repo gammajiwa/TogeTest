@@ -3668,6 +3668,7 @@ GameObject:
   m_Component:
   - component: {fileID: 349273162}
   - component: {fileID: 349273161}
+  - component: {fileID: 349273163}
   m_Layer: 0
   m_Name: OverworldEnemy
   m_TagString: Untagged
@@ -3709,6 +3710,21 @@ Transform:
   - {fileID: 1825617508}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &349273163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 349273160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6896d7b5fd13349be93a52c86730e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Toge.Core.PatrolMover
+  _visual: {fileID: 1825617508}
+  _range: 3
+  _speed: 1.6
 --- !u!1 &356549053
 GameObject:
   m_ObjectHideFlags: 0

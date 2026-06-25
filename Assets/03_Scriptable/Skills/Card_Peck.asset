@@ -16,5 +16,6 @@ MonoBehaviour:
   description: A swift jab.
   art: {fileID: 0}
   type: 0
+  cost: 1
   power: 22
   targetType: 0

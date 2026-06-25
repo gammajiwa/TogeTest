@@ -22,4 +22,13 @@ MonoBehaviour:
   idleAnimation: idle
   visualScale: 0.23
   startingLevel: 1
-  cards: []
+  cards:
+  - {fileID: 11400000, guid: 82fa64d0efd654a4382afad6322da6c6, type: 2}
+  - {fileID: 11400000, guid: 82fa64d0efd654a4382afad6322da6c6, type: 2}
+  - {fileID: 11400000, guid: 82fa64d0efd654a4382afad6322da6c6, type: 2}
+  - {fileID: 11400000, guid: bd0e0b11ae7977b4aa03750eb3053948, type: 2}
+  - {fileID: 11400000, guid: bd0e0b11ae7977b4aa03750eb3053948, type: 2}
+  - {fileID: 11400000, guid: 297f07c6f1b0ba54eb9b102ac4e44757, type: 2}
+  - {fileID: 11400000, guid: 297f07c6f1b0ba54eb9b102ac4e44757, type: 2}
+  - {fileID: 11400000, guid: 29a591be054df9944bdca8ed5c307341, type: 2}
+  - {fileID: 11400000, guid: 29a591be054df9944bdca8ed5c307341, type: 2}

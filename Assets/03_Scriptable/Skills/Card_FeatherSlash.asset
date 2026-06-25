@@ -16,5 +16,6 @@ MonoBehaviour:
   description: Razor feathers.
   art: {fileID: 0}
   type: 0
+  cost: 1
   power: 30
   targetType: 0
