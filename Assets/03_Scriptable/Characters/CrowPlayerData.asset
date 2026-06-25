@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94531a7ba23f53c4d869fa26f0151b8a, type: 3}
+  m_Name: CrowPlayerData
+  m_EditorClassIdentifier: Assembly-CSharp::Toge.Data.PlayerDataSO
+  displayName: Crow
+  maxHealth: 120
+  attack: 25
+  defense: 8
+  speed: 14
+  skeleton: {fileID: 11400000, guid: d6d57afb65b843c49b4d65a5bbe724fb, type: 2}
+  skin: 
+  idleAnimation: idle
+  visualScale: 0.23
+  startingLevel: 1
+  cards: []

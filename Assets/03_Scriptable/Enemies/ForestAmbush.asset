@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f3a93155136d374a8e3292f267908b4, type: 3}
+  m_Name: ForestAmbush
+  m_EditorClassIdentifier: Assembly-CSharp::Toge.Data.EncounterSO
+  displayName: Forest Ambush
+  enemies:
+  - {fileID: 11400000, guid: 6cbd93b4629f4784f828c1a26c9bc875, type: 2}
+  - {fileID: 11400000, guid: c1cabd099e8e39242b6d7c1330f3ed92, type: 2}

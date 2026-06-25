@@ -4,7 +4,6 @@ using Toge.Events;
 
 namespace Toge.Core
 {
-    /// <summary>Tracks the current game state and broadcasts changes over an event channel.</summary>
     public class GameStateManager : MonoBehaviour
     {
         [SerializeField] private GameStateEventChannelSO _stateChannel;

@@ -3,13 +3,11 @@ using Toge.Variables;
 
 namespace Toge.Core
 {
-    /// <summary>Smoothly follows the player (found via a runtime anchor) at a fixed 2.5D angle.</summary>
     public class CameraFollow : MonoBehaviour
     {
         [SerializeField] private TransformAnchorSO _targetAnchor;
         [SerializeField] private Vector3 _offset = new Vector3(0f, 8f, -6f);
-        [SerializeField] private float _smoothTime = 0.15f;
-        [SerializeField] private float _lookHeight = 1f;
+        [SerializeField] private float _smoothTime = 0.18f;
 
         private Vector3 _velocity;
 
@@ -17,9 +15,9 @@ namespace Toge.Core
         {
             if (_targetAnchor == null || !_targetAnchor.IsSet) return;
 
-            Vector3 targetPos = _targetAnchor.Value.position;
-            transform.position = Vector3.SmoothDamp(transform.position, targetPos + _offset, ref _velocity, _smoothTime);
-            transform.LookAt(targetPos + Vector3.up * _lookHeight);
+            Vector3 p = _targetAnchor.Value.position;
+            Vector3 target = new Vector3(p.x + _offset.x, _offset.y, p.z + _offset.z);
+            transform.position = Vector3.SmoothDamp(transform.position, target, ref _velocity, _smoothTime);
         }
     }
 }

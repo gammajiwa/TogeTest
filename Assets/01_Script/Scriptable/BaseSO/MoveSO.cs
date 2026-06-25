@@ -3,7 +3,6 @@ using Toge.Enums;
 
 namespace Toge.Data
 {
-    /// <summary>A battle action a character can perform.</summary>
     [CreateAssetMenu(menuName = "Toge/Data/Move", fileName = "NewMove")]
     public class MoveSO : ScriptableObject
     {

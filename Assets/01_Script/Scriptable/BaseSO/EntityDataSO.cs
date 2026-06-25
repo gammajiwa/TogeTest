@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Spine.Unity;
 
 namespace Toge.Data
 {
-    /// <summary>Static base stats shared by players and enemies.</summary>
     public abstract class EntityDataSO : ScriptableObject
     {
         [Header("Identity")]
@@ -15,7 +15,10 @@ namespace Toge.Data
         public int defense = 5;
         public int speed = 10;
 
-        [Header("Moves")]
-        public List<MoveSO> moves = new();
+        [Header("Battle Visual (Spine)")]
+        public SkeletonDataAsset skeleton;
+        public string skin;
+        public string idleAnimation = "idle";
+        public float visualScale = 0.25f;
     }
 }

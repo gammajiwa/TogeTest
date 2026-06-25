@@ -1,6 +1,5 @@
 namespace Toge.Save
 {
-    /// <summary>Mutable runtime/save state for one party member.</summary>
     [System.Serializable]
     public class PartyMemberData
     {

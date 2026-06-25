@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace Toge.Data
 {
-    /// <summary>The set of enemies that make up a single battle.</summary>
     [CreateAssetMenu(menuName = "Toge/Data/Encounter", fileName = "NewEncounter")]
     public class EncounterSO : ScriptableObject
     {

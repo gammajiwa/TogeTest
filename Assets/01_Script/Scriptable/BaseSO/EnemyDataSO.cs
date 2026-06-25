@@ -1,4 +1,5 @@
 using UnityEngine;
+using Toge.AI;
 
 namespace Toge.Data
 {
@@ -8,5 +9,8 @@ namespace Toge.Data
         [Header("Rewards")]
         public int expReward = 10;
         public int goldReward = 5;
+
+        [Header("AI")]
+        public EnemyStrategySO strategy;
     }
 }

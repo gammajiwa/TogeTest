@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Toge.Data
@@ -7,5 +8,8 @@ namespace Toge.Data
     {
         [Header("Player")]
         public int startingLevel = 1;
+
+        [Header("Cards")]
+        public List<CardSO> cards = new();
     }
 }

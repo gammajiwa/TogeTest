@@ -3,7 +3,6 @@ using UnityEngine.Events;
 
 namespace Toge.Variables
 {
-    /// <summary>Runtime reference to a scene Transform (e.g. the player), shared without hard links.</summary>
     [CreateAssetMenu(menuName = "Toge/Variables/Transform Anchor", fileName = "TransformAnchor")]
     public class TransformAnchorSO : ScriptableObject
     {

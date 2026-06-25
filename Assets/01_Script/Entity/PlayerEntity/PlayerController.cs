@@ -1,23 +1,40 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
+using Toge.Data;
 using Toge.Variables;
 
 namespace Toge.Entities
 {
-    /// <summary>Top-down WASD/arrow movement on the XZ plane for the overworld.</summary>
-    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(CharacterController), typeof(PlayerInteractor))]
     public class PlayerController : MonoBehaviour
     {
-        [SerializeField] private float _moveSpeed = 5f;
+        [Header("Movement")]
+        [SerializeField] private float _walkSpeed = 5f;
+        [SerializeField] private float _runSpeed = 9f;
+        [SerializeField] private float _jumpHeight = 1.8f;
+        [SerializeField] private float _gravity = -25f;
+
+        [Header("References")]
+        [SerializeField] private InputMapSO _input;
         [SerializeField] private TransformAnchorSO _playerAnchor;
         [SerializeField] private Transform _visual;
+        [SerializeField] private PlayerSpineAnimator _animator;
+        [SerializeField] private PlayerInteractor _interactor;
 
         private CharacterController _controller;
+        private float _verticalVelocity;
 
-        private void Awake() => _controller = GetComponent<CharacterController>();
+        private void Awake()
+        {
+            _controller = GetComponent<CharacterController>();
+            if (_animator == null) _animator = GetComponentInChildren<PlayerSpineAnimator>();
+            if (_interactor == null) _interactor = GetComponent<PlayerInteractor>();
+        }
 
-        private void OnEnable() => _playerAnchor?.Provide(transform);
+        private void OnEnable()
+        {
+            if (_playerAnchor != null) _playerAnchor.Provide(transform);
+        }
 
         private void OnDisable()
         {
@@ -27,25 +44,74 @@ namespace Toge.Entities
 
         private void Update()
         {
-            Vector2 input = ReadInput();
-            Vector3 move = new Vector3(input.x, 0f, input.y);
-            if (move.sqrMagnitude > 1f) move.Normalize();
+            HandleActionInput();
 
-            _controller.SimpleMove(move * _moveSpeed);
+            bool attacking = _animator != null && _animator.IsAttacking;
+            Vector2 input = attacking ? Vector2.zero : ReadMove();
+
+            Vector3 horizontal = new Vector3(input.x, 0f, input.y);
+            if (horizontal.sqrMagnitude > 1f) horizontal.Normalize();
+            horizontal *= IsRunHeld() ? _runSpeed : _walkSpeed;
+
+            ApplyGravity();
+            _controller.Move((horizontal + Vector3.up * _verticalVelocity) * Time.deltaTime);
+
             FaceMovement(input.x);
         }
 
-        private static Vector2 ReadInput()
+        private void HandleActionInput()
+        {
+            if (Pressed(_input.interact) && _interactor != null)
+                _interactor.TryInteract();
+
+            if (Pressed(_input.jump))
+            {
+                bool interacted = _interactor != null && _interactor.TryInteract();
+                if (!interacted) TryJump();
+            }
+
+            if (Pressed(_input.attack) && _animator != null)
+                _animator.PlayAttack();
+        }
+
+        private void TryJump()
+        {
+            if (_controller.isGrounded)
+                _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
+        }
+
+        private void ApplyGravity()
+        {
+            if (_controller.isGrounded && _verticalVelocity < 0f)
+                _verticalVelocity = -2f;
+            _verticalVelocity += _gravity * Time.deltaTime;
+        }
+
+        private Vector2 ReadMove()
         {
             Keyboard kb = Keyboard.current;
             if (kb == null) return Vector2.zero;
 
-            float x = Held(kb.dKey, kb.rightArrowKey) - Held(kb.aKey, kb.leftArrowKey);
-            float y = Held(kb.wKey, kb.upArrowKey) - Held(kb.sKey, kb.downArrowKey);
+            float x = (Held(_input.moveRight) || kb.rightArrowKey.isPressed ? 1f : 0f)
+                    - (Held(_input.moveLeft) || kb.leftArrowKey.isPressed ? 1f : 0f);
+            float y = (Held(_input.moveUp) || kb.upArrowKey.isPressed ? 1f : 0f)
+                    - (Held(_input.moveDown) || kb.downArrowKey.isPressed ? 1f : 0f);
             return new Vector2(x, y);
         }
 
-        private static float Held(KeyControl a, KeyControl b) => a.isPressed || b.isPressed ? 1f : 0f;
+        private bool IsRunHeld() => Held(_input.run);
+
+        private static bool Held(Key key)
+        {
+            Keyboard kb = Keyboard.current;
+            return kb != null && kb[key].isPressed;
+        }
+
+        private static bool Pressed(Key key)
+        {
+            Keyboard kb = Keyboard.current;
+            return kb != null && kb[key].wasPressedThisFrame;
+        }
 
         private void FaceMovement(float x)
         {

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 
 namespace Toge.Save
 {
-    /// <summary>Party state carried between the overworld and battle, and persisted on save.</summary>
     [System.Serializable]
     public class PartyRuntimeData
     {
