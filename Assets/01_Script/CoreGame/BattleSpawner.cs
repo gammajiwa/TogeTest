@@ -1,8 +1,11 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Spine.Unity;
 using Toge.Core;
 using Toge.Data;
+using Toge.Variables;
 
 namespace Toge.Battle
 {
@@ -12,17 +15,42 @@ namespace Toge.Battle
         [SerializeField] private BattleUI _ui;
         [SerializeField] private PartyConfigSO _party;
         [SerializeField] private EncounterSO _encounter;
+        [SerializeField] private EncounterAnchorSO _activeEncounter;
+        [SerializeField] private string _bootScene = "Boot";
         [SerializeField] private float _playerX = -3.5f;
         [SerializeField] private float _enemyX = 3.5f;
         [SerializeField] private float _spacing = 2.5f;
 
-        private void Start()
+        private bool _spawned;
+
+        private void OnEnable()
+        {
+            if (_spawned) return;
+
+            EncounterSO encounter = ResolveEncounter();
+            if (encounter == null) return;
+
+            _spawned = true;
+            StartCoroutine(SpawnThenBegin(encounter));
+        }
+
+        private EncounterSO ResolveEncounter()
+        {
+            if (_activeEncounter != null && _activeEncounter.IsSet) return _activeEncounter.Value;
+
+            bool standalone = !SceneManager.GetSceneByName(_bootScene).isLoaded;
+            return standalone ? _encounter : null;
+        }
+
+        private IEnumerator SpawnThenBegin(EncounterSO encounter)
         {
             List<BattleUnit> players = SpawnSide(PartyData(), _playerX, true, BattleTeam.Player);
-            List<BattleUnit> enemies = SpawnSide(EncounterData(), _enemyX, false, BattleTeam.Enemy);
+            List<BattleUnit> enemies = SpawnSide(EnemyData(encounter), _enemyX, false, BattleTeam.Enemy);
 
             if (_ui != null && players.Count > 0 && enemies.Count > 0)
                 _ui.Bind(players[0], enemies[0]);
+
+            yield return null;
 
             if (_battle != null) _battle.Begin(players, enemies);
         }
@@ -36,11 +64,11 @@ namespace Toge.Battle
             return list;
         }
 
-        private List<EntityDataSO> EncounterData()
+        private List<EntityDataSO> EnemyData(EncounterSO encounter)
         {
             var list = new List<EntityDataSO>();
-            if (_encounter != null)
-                foreach (EnemyDataSO enemy in _encounter.enemies)
+            if (encounter != null)
+                foreach (EnemyDataSO enemy in encounter.enemies)
                     if (enemy != null) list.Add(enemy);
             return list;
         }

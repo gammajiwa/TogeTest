@@ -23,6 +23,7 @@ namespace Toge.Entities
 
         private CharacterController _controller;
         private float _verticalVelocity;
+        private Vector2? _scriptedMove;
 
         private void Awake()
         {
@@ -42,12 +43,14 @@ namespace Toge.Entities
                 _playerAnchor.Unset();
         }
 
+        public void SetScriptedMove(Vector2? move) => _scriptedMove = move;
+
         private void Update()
         {
-            HandleActionInput();
+            if (!_scriptedMove.HasValue) HandleActionInput();
 
             bool attacking = _animator != null && _animator.IsAttacking;
-            Vector2 input = attacking ? Vector2.zero : ReadMove();
+            Vector2 input = attacking ? Vector2.zero : (_scriptedMove ?? ReadMove());
 
             Vector3 horizontal = new Vector3(input.x, 0f, input.y);
             if (horizontal.sqrMagnitude > 1f) horizontal.Normalize();
