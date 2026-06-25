@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdcc3261904e7804996daf21dd6ebd4f, type: 3}
+  m_Name: ForestLoot
+  m_EditorClassIdentifier: Assembly-CSharp::Toge.Data.LootTableSO
+  pool:
+  - {fileID: 11400000, guid: 82fa64d0efd654a4382afad6322da6c6, type: 2}
+  - {fileID: 11400000, guid: 86f542af0b4be4d408cdffdb729f15a9, type: 2}
+  - {fileID: 11400000, guid: 70fc96534d7ccde4199092d49a1ea57f, type: 2}
+  - {fileID: 11400000, guid: 4b624e2ed07041a428c9f471acaf8824, type: 2}
+  - {fileID: 11400000, guid: 8b78e3205fec54c4da8defaddd9ab73e, type: 2}

@@ -16,22 +16,19 @@ namespace Toge.Battle
         [SerializeField] private PartyConfigSO _party;
         [SerializeField] private EncounterSO _encounter;
         [SerializeField] private EncounterAnchorSO _activeEncounter;
+        [SerializeField] private RuntimeDeckSO _runtimeDeck;
         [SerializeField] private TMP_FontAsset _font;
         [SerializeField] private string _bootScene = "Boot";
         [SerializeField] private float _playerX = -3.5f;
         [SerializeField] private float _enemyX = 3.5f;
         [SerializeField] private float _spacing = 2.5f;
 
-        private bool _spawned;
+        private readonly List<GameObject> _spawnedObjects = new();
 
         private void OnEnable()
         {
-            if (_spawned) return;
-
             EncounterSO encounter = ResolveEncounter();
             if (encounter == null) return;
-
-            _spawned = true;
             StartCoroutine(SpawnThenBegin(encounter));
         }
 
@@ -45,17 +42,24 @@ namespace Toge.Battle
 
         private IEnumerator SpawnThenBegin(EncounterSO encounter)
         {
+            ClearSpawned();
+
             List<BattleUnit> players = SpawnSide(PartyData(), _playerX, true, BattleTeam.Player);
             List<BattleUnit> enemies = SpawnSide(EnemyData(encounter), _enemyX, false, BattleTeam.Enemy);
 
             BattleUnit player = players.Count > 0 ? players[0] : null;
-            List<CardSO> deck = player != null && player.Data is PlayerDataSO data
-                ? data.cards
-                : new List<CardSO>();
+            List<CardSO> deck = ResolveDeck(player);
 
             yield return null;
 
             if (_battle != null && player != null) _battle.Begin(player, enemies, deck);
+        }
+
+        private void ClearSpawned()
+        {
+            foreach (GameObject go in _spawnedObjects)
+                if (go != null) Destroy(go);
+            _spawnedObjects.Clear();
         }
 
         private List<EntityDataSO> PartyData()
@@ -76,6 +80,17 @@ namespace Toge.Battle
             return list;
         }
 
+        private List<CardSO> ResolveDeck(BattleUnit player)
+        {
+            if (_runtimeDeck != null && _runtimeDeck.IsInitialized && _runtimeDeck.Cards.Count > 0)
+                return new List<CardSO>(_runtimeDeck.Cards);
+
+            if (player != null && player.Data is PlayerDataSO data)
+                return new List<CardSO>(data.cards);
+
+            return new List<CardSO>();
+        }
+
         private List<BattleUnit> SpawnSide(List<EntityDataSO> datas, float x, bool faceRight, BattleTeam team)
         {
             var units = new List<BattleUnit>();
@@ -94,6 +109,7 @@ namespace Toge.Battle
             SkeletonAnimation sa = SkeletonAnimation.NewSkeletonAnimationGameObject(data.skeleton);
             GameObject go = sa.gameObject;
             go.name = team + "_" + data.displayName;
+            _spawnedObjects.Add(go);
 
             if (!string.IsNullOrEmpty(data.skin)) sa.initialSkinName = data.skin;
             if (!string.IsNullOrEmpty(data.idleAnimation)) sa.AnimationName = data.idleAnimation;

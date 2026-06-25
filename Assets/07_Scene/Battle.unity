@@ -614,6 +614,7 @@ MonoBehaviour:
   _party: {fileID: 11400000, guid: ff58cc64c883c8f4391d680d4af8ffa5, type: 2}
   _encounter: {fileID: 11400000, guid: 2630330b102b38346a2a2e989345e4ca, type: 2}
   _activeEncounter: {fileID: 11400000, guid: db43c589664fc274dbd4f143fb5fe492, type: 2}
+  _runtimeDeck: {fileID: 11400000, guid: b4019281d09d20a40a601cd90ebc0d69, type: 2}
   _font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   _bootScene: Boot
   _playerX: -3.5

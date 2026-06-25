@@ -15,6 +15,7 @@ MonoBehaviour:
   cardName: Feather Slash
   description: Razor feathers.
   art: {fileID: 0}
+  rarity: 0
   type: 0
   cost: 1
   power: 30

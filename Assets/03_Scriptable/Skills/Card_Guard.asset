@@ -15,6 +15,7 @@ MonoBehaviour:
   cardName: Guard
   description: Brace for impact.
   art: {fileID: 0}
+  rarity: 0
   type: 1
   cost: 1
   power: 15

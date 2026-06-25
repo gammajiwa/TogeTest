@@ -52,6 +52,7 @@ namespace Toge.Battle
         private void OnPlayerTurnChanged(bool playerTurn)
         {
             if (_endTurnButton != null) _endTurnButton.interactable = playerTurn;
+            if (playerTurn && _resultObject != null) _resultObject.SetActive(false);
             Refresh();
         }
 
@@ -90,7 +91,7 @@ namespace Toge.Battle
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(150f, 200f);
 
             var image = go.AddComponent<Image>();
-            Color tint = data.type == CardType.Defend ? new Color(0.28f, 0.45f, 0.62f) : new Color(0.5f, 0.3f, 0.52f);
+            Color tint = CardSO.RarityColor(data.rarity);
             image.color = affordable ? tint : new Color(0.22f, 0.22f, 0.24f, 0.95f);
 
             var button = go.AddComponent<Button>();

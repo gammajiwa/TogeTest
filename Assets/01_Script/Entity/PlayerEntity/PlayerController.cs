@@ -13,6 +13,7 @@ namespace Toge.Entities
         [SerializeField] private float _runSpeed = 9f;
         [SerializeField] private float _jumpHeight = 1.8f;
         [SerializeField] private float _gravity = -25f;
+        [SerializeField] private float _attackRadius = 1.7f;
 
         [Header("References")]
         [SerializeField] private InputMapSO _input;
@@ -74,7 +75,18 @@ namespace Toge.Entities
             }
 
             if (Pressed(_input.attack) && _animator != null)
+            {
                 _animator.PlayAttack();
+                AttackHit();
+            }
+        }
+
+        private void AttackHit()
+        {
+            Collider[] hits = Physics.OverlapSphere(transform.position, _attackRadius);
+            foreach (Collider hit in hits)
+                if (hit.TryGetComponent(out Toge.Core.DestructibleObject destructible))
+                    destructible.Hit(1);
         }
 
         private void TryJump()
