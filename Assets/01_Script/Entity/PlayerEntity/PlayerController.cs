@@ -83,6 +83,8 @@ namespace Toge.Entities
 
         private void AttackHit()
         {
+            if (Toge.Core.AudioManager.Instance != null) Toge.Core.AudioManager.Instance.PlayAttack();
+
             Collider[] hits = Physics.OverlapSphere(transform.position, _attackRadius);
             foreach (Collider hit in hits)
                 if (hit.TryGetComponent(out Toge.Core.DestructibleObject destructible))

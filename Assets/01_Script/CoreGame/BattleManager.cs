@@ -81,6 +81,7 @@ namespace Toge.Battle
             _energy -= card.Data.cost;
             _hand.Remove(card);
             _discardPile.Add(card);
+            if (Toge.Core.AudioManager.Instance != null) Toge.Core.AudioManager.Instance.PlayCard();
             StateChanged?.Invoke();
             return true;
         }

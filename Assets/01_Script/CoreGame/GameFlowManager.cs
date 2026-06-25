@@ -36,6 +36,8 @@ namespace Toge.Core
             if (_loadUiScene) yield return LoadAdditive(_uiScene);
 
             Activate(_overworldScene);
+
+            if (SceneLoaderManager.Instance != null) SceneLoaderManager.Instance.HideLoading();
         }
 
         private void EnterBattle(EncounterSO encounter) => Activate(_battleScene);
