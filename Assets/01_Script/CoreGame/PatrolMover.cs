@@ -5,6 +5,7 @@ namespace Toge.Core
     public class PatrolMover : MonoBehaviour
     {
         [SerializeField] private Transform _visual;
+        [SerializeField] private bool _facesRight = true;
         [SerializeField] private float _range = 3f;
         [SerializeField] private float _speed = 1.5f;
 
@@ -39,8 +40,9 @@ namespace Toge.Core
         private void Face()
         {
             if (_visual == null) return;
+            bool wantRight = _direction > 0;
             Vector3 scale = _visual.localScale;
-            scale.x = Mathf.Abs(scale.x) * (_direction > 0 ? 1 : -1);
+            scale.x = Mathf.Abs(scale.x) * (wantRight == _facesRight ? 1f : -1f);
             _visual.localScale = scale;
         }
     }

@@ -15,6 +15,7 @@ namespace Toge.Battle
         [SerializeField] private int _handSize = 5;
         [SerializeField] private float _enemyTurnDelay = 0.7f;
         [SerializeField] private float _drawDelay = 0.1f;
+        [SerializeField] private float _projectileTravelTime = 0.28f;
 
         private BattleUnit _player;
         private readonly List<BattleUnit> _enemies = new();
@@ -68,6 +69,11 @@ namespace Toge.Battle
             if (!IsPlayerTurn || card == null || !_hand.Contains(card)) return false;
             if (_energy < card.Data.cost) return false;
 
+            _energy -= card.Data.cost;
+            _hand.Remove(card);
+            _discardPile.Add(card);
+            if (Toge.Core.AudioManager.Instance != null) Toge.Core.AudioManager.Instance.PlayCard();
+
             if (card.Data.type == CardType.Defend)
             {
                 _block += card.Data.power;
@@ -75,13 +81,9 @@ namespace Toge.Battle
             else
             {
                 if (target == null || !target.IsAlive) target = FirstLivingEnemy();
-                if (target != null) target.TakeDamage(Mathf.Max(1, card.Data.power));
+                if (target != null) DeliverAttack(_player, target, Mathf.Max(1, card.Data.power));
             }
 
-            _energy -= card.Data.cost;
-            _hand.Remove(card);
-            _discardPile.Add(card);
-            if (Toge.Core.AudioManager.Instance != null) Toge.Core.AudioManager.Instance.PlayCard();
             StateChanged?.Invoke();
             return true;
         }
@@ -110,6 +112,7 @@ namespace Toge.Battle
 
                 IsPlayerTurn = false;
                 PlayerTurnChanged?.Invoke(false);
+                yield return new WaitForSeconds(_projectileTravelTime + 0.2f);
                 DiscardHand();
                 StateChanged?.Invoke();
                 if (IsOver()) break;
@@ -132,16 +135,62 @@ namespace Toge.Battle
 
                 yield return new WaitForSeconds(_enemyTurnDelay);
 
-                int incoming = enemy.Attack;
+                DeliverEnemyAttack(enemy);
+                yield return new WaitForSeconds(_projectileTravelTime + 0.2f);
+
+                if (!_player.IsAlive) yield break;
+            }
+        }
+
+        private void DeliverAttack(BattleUnit attacker, BattleUnit target, int damage)
+        {
+            Lunge(attacker);
+            Vector3 from = attacker != null ? attacker.transform.position + Vector3.up * 1.2f : target.transform.position;
+            BattleUnit intended = target;
+
+            BattleProjectile.Spawn(from, target.transform, _projectileTravelTime, () =>
+            {
+                BattleUnit hit = intended != null && intended.IsAlive ? intended : FirstLivingEnemy();
+                if (hit == null) return;
+                hit.TakeDamage(damage);
+                PlayHitFx(hit, damage);
+                StateChanged?.Invoke();
+            });
+        }
+
+        private void DeliverEnemyAttack(BattleUnit enemy)
+        {
+            Lunge(enemy);
+            int incoming = enemy.Attack;
+            Vector3 from = enemy.transform.position + Vector3.up * 1.2f;
+
+            BattleProjectile.Spawn(from, _player.transform, _projectileTravelTime, () =>
+            {
+                if (_player == null) return;
                 int absorbed = Mathf.Min(_block, incoming);
                 _block -= absorbed;
                 int damage = incoming - absorbed;
-                if (damage > 0) _player.TakeDamage(damage);
-
-                Debug.Log($"[Battle] {enemy.DisplayName} attacks for {incoming} (blocked {absorbed})");
+                if (damage > 0)
+                {
+                    _player.TakeDamage(damage);
+                    PlayHitFx(_player, damage);
+                }
                 StateChanged?.Invoke();
-                if (!_player.IsAlive) yield break;
-            }
+            });
+        }
+
+        private static void Lunge(BattleUnit unit)
+        {
+            if (unit == null) return;
+            UnitHitFx fx = unit.GetComponent<UnitHitFx>();
+            if (fx != null) fx.Lunge();
+        }
+
+        private static void PlayHitFx(BattleUnit unit, int damage)
+        {
+            if (unit == null) return;
+            UnitHitFx fx = unit.GetComponent<UnitHitFx>();
+            if (fx != null) fx.Play(damage);
         }
 
         private IEnumerator DrawToHandSize()

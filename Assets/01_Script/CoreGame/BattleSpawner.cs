@@ -117,7 +117,8 @@ namespace Toge.Battle
             sa.Initialize(true);
 
             float s = Mathf.Max(0.0001f, data.visualScale);
-            go.transform.localScale = new Vector3(faceRight ? s : -s, s, s);
+            float scaleX = faceRight == data.facesRight ? s : -s;
+            go.transform.localScale = new Vector3(scaleX, s, s);
             go.transform.position = pos;
 
             var renderer = go.GetComponent<MeshRenderer>();
@@ -128,6 +129,9 @@ namespace Toge.Battle
 
             var unit = go.AddComponent<BattleUnit>();
             unit.Init(data, team);
+
+            int knockDir = team == BattleTeam.Player ? -1 : 1;
+            go.AddComponent<UnitHitFx>().Init(knockDir);
 
             float headHeight = renderer != null && renderer.bounds.size.y > 0.01f
                 ? renderer.bounds.size.y + 0.4f

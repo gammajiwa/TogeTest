@@ -20,5 +20,6 @@ namespace Toge.Data
         public string skin;
         public string idleAnimation = "idle";
         public float visualScale = 0.25f;
+        public bool facesRight = true;
     }
 }
