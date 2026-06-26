@@ -74,9 +74,9 @@ namespace Toge.Entities
                 if (!interacted) TryJump();
             }
 
-            if (Pressed(_input.attack) && _animator != null)
+            if (Pressed(_input.attack))
             {
-                _animator.PlayAttack();
+                if (_animator != null) _animator.PlayAttack();
                 AttackHit();
             }
         }

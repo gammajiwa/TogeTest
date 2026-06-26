@@ -22,6 +22,7 @@ namespace Toge.Core
 
             Vector3 delta = transform.position - _playerAnchor.Value.position;
             if (delta.sqrMagnitude > _triggerRadius * _triggerRadius) return;
+            if (!UnityEngine.SceneManagement.SceneManager.GetSceneByName("Boot").isLoaded) return;
 
             _fired = true;
             if (_activeEncounter != null) _activeEncounter.Provide(_encounter);
