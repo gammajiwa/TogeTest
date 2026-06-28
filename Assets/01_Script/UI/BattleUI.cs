@@ -62,8 +62,8 @@ namespace Toge.Battle
 
             if (_energyText != null) _energyText.text = $"{_battle.Energy}/{_battle.MaxEnergy}";
             if (_blockText != null) _blockText.text = _battle.Block > 0 ? $"BLOCK {_battle.Block}" : string.Empty;
-            if (_drawText != null) _drawText.text = $"Draw: {_battle.DrawCount}";
-            if (_discardText != null) _discardText.text = $"Discard: {_battle.DiscardCount}";
+            if (_drawText != null) _drawText.text = _battle.DrawCount.ToString();
+            if (_discardText != null) _discardText.text = _battle.DiscardCount.ToString();
 
             RebuildHand();
         }
