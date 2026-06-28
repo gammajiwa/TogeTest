@@ -15,7 +15,6 @@ namespace Toge.Battle
         [SerializeField] private int _handSize = 5;
         [SerializeField] private float _enemyTurnDelay = 0.7f;
         [SerializeField] private float _drawDelay = 0.1f;
-        [SerializeField] private float _projectileTravelTime = 0.28f;
 
         private BattleUnit _player;
         private readonly List<BattleUnit> _enemies = new();
@@ -81,7 +80,7 @@ namespace Toge.Battle
             else
             {
                 if (target == null || !target.IsAlive) target = FirstLivingEnemy();
-                if (target != null) DeliverAttack(_player, target, Mathf.Max(1, card.Data.power));
+                Attack(_player, target, Mathf.Max(1, card.Data.power));
             }
 
             StateChanged?.Invoke();
@@ -112,7 +111,6 @@ namespace Toge.Battle
 
                 IsPlayerTurn = false;
                 PlayerTurnChanged?.Invoke(false);
-                yield return new WaitForSeconds(_projectileTravelTime + 0.2f);
                 DiscardHand();
                 StateChanged?.Invoke();
                 if (IsOver()) break;
@@ -135,48 +133,30 @@ namespace Toge.Battle
 
                 yield return new WaitForSeconds(_enemyTurnDelay);
 
-                DeliverEnemyAttack(enemy);
-                yield return new WaitForSeconds(_projectileTravelTime + 0.2f);
-
-                if (!_player.IsAlive) yield break;
-            }
-        }
-
-        private void DeliverAttack(BattleUnit attacker, BattleUnit target, int damage)
-        {
-            Lunge(attacker);
-            Vector3 from = attacker != null ? attacker.transform.position + Vector3.up * 1.2f : target.transform.position;
-            BattleUnit intended = target;
-
-            BattleProjectile.Spawn(from, target.transform, _projectileTravelTime, () =>
-            {
-                BattleUnit hit = intended != null && intended.IsAlive ? intended : FirstLivingEnemy();
-                if (hit == null) return;
-                hit.TakeDamage(damage);
-                PlayHitFx(hit, damage);
-                StateChanged?.Invoke();
-            });
-        }
-
-        private void DeliverEnemyAttack(BattleUnit enemy)
-        {
-            Lunge(enemy);
-            int incoming = enemy.Attack;
-            Vector3 from = enemy.transform.position + Vector3.up * 1.2f;
-
-            BattleProjectile.Spawn(from, _player.transform, _projectileTravelTime, () =>
-            {
-                if (_player == null) return;
+                int incoming = enemy.Attack;
                 int absorbed = Mathf.Min(_block, incoming);
                 _block -= absorbed;
                 int damage = incoming - absorbed;
+
+                Lunge(enemy);
                 if (damage > 0)
                 {
                     _player.TakeDamage(damage);
                     PlayHitFx(_player, damage);
                 }
+
                 StateChanged?.Invoke();
-            });
+                if (!_player.IsAlive) yield break;
+            }
+        }
+
+        private void Attack(BattleUnit attacker, BattleUnit target, int damage)
+        {
+            if (target == null) return;
+
+            Lunge(attacker);
+            target.TakeDamage(damage);
+            PlayHitFx(target, damage);
         }
 
         private static void Lunge(BattleUnit unit)
