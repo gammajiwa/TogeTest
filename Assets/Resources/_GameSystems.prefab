@@ -726,6 +726,7 @@ MonoBehaviour:
   _gameplayBgm: {fileID: 8300000, guid: 70015de4d813ae940a12dcf63eeea445, type: 3}
   _cardSfx: {fileID: 8300000, guid: 933d09e96cc57e24cb1f7b538f3b8bbf, type: 3}
   _attackSfx: {fileID: 8300000, guid: 736d904f5543df5428739616c8a712f8, type: 3}
+  _hitSfx: {fileID: 8300000, guid: efbb0263b7f3a4b4ab032b3294beb712, type: 3}
   _winSfx: {fileID: 8300000, guid: d63be6f828911bb49aae8f58cbdde15d, type: 3}
   _loseSfx: {fileID: 8300000, guid: 5519b07c30e149241bbd4ad91f17d8ee, type: 3}
 --- !u!114 &936002507053169634

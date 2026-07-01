@@ -36,6 +36,8 @@ namespace Toge.Battle
         public void Play(int damage)
         {
             FloatingLabel.Spawn(transform.position + Vector3.up * 2.7f, "-" + damage, new Color(1f, 0.45f, 0.4f));
+            HitVfx.Spawn(transform.position + Vector3.up * 1.5f);
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayHit();
             if (_dead) return;
             Restart(HitRoutine());
         }

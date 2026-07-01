@@ -14,6 +14,7 @@ namespace Toge.Core
         [Header("SFX")]
         [SerializeField] private AudioClip _cardSfx;
         [SerializeField] private AudioClip _attackSfx;
+        [SerializeField] private AudioClip _hitSfx;
         [SerializeField] private AudioClip _winSfx;
         [SerializeField] private AudioClip _loseSfx;
 
@@ -71,6 +72,7 @@ namespace Toge.Core
 
         public void PlayCard() => Play(_cardSfx);
         public void PlayAttack() => Play(_attackSfx);
+        public void PlayHit() => Play(_hitSfx);
         public void PlayWin() => Play(_winSfx);
         public void PlayLose() => Play(_loseSfx);
 
