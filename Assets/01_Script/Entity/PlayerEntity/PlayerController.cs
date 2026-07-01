@@ -48,10 +48,11 @@ namespace Toge.Entities
 
         private void Update()
         {
-            if (!_scriptedMove.HasValue) HandleActionInput();
+            bool dialog = Toge.Interactive.DialogState.IsActive;
+            if (!_scriptedMove.HasValue && !dialog) HandleActionInput();
 
             bool attacking = _animator != null && _animator.IsAttacking;
-            Vector2 input = attacking ? Vector2.zero : (_scriptedMove ?? ReadMove());
+            Vector2 input = (dialog || attacking) ? Vector2.zero : (_scriptedMove ?? ReadMove());
 
             Vector3 horizontal = new Vector3(input.x, 0f, input.y);
             if (horizontal.sqrMagnitude > 1f) horizontal.Normalize();

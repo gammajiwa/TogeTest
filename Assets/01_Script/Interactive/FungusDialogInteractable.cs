@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using Fungus;
 using Toge.Interfaces;
@@ -16,7 +17,18 @@ namespace Toge.Interactive
         {
             if (_flowchart == null) return;
             if (_flowchart.HasExecutingBlocks()) return;
-            if (_flowchart.HasBlock(_blockName)) _flowchart.ExecuteBlock(_blockName);
+            if (!_flowchart.HasBlock(_blockName)) return;
+
+            _flowchart.ExecuteBlock(_blockName);
+            StartCoroutine(TrackDialog());
+        }
+
+        private IEnumerator TrackDialog()
+        {
+            DialogState.IsActive = true;
+            yield return null;
+            while (_flowchart != null && _flowchart.HasExecutingBlocks()) yield return null;
+            DialogState.IsActive = false;
         }
     }
 }
