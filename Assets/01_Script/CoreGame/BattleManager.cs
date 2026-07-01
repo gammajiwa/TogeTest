@@ -15,6 +15,7 @@ namespace Toge.Battle
         [SerializeField] private int _handSize = 5;
         [SerializeField] private float _enemyTurnDelay = 0.7f;
         [SerializeField] private float _drawDelay = 0.1f;
+        [SerializeField] private float _deathDelay = 0.85f;
 
         private BattleUnit _player;
         private readonly List<BattleUnit> _enemies = new();
@@ -119,7 +120,14 @@ namespace Toge.Battle
                 if (IsOver()) break;
             }
 
+            yield return new WaitForSeconds(_deathDelay);
+
             BattleResult result = AllEnemiesDead() ? BattleResult.Win : BattleResult.Lose;
+            if (Toge.Core.AudioManager.Instance != null)
+            {
+                if (result == BattleResult.Win) Toge.Core.AudioManager.Instance.PlayWin();
+                else Toge.Core.AudioManager.Instance.PlayLose();
+            }
             Debug.Log($"[Battle] {result}");
             BattleEnded?.Invoke(result);
             if (_resultChannel != null) _resultChannel.RaiseEvent(result);
@@ -139,10 +147,12 @@ namespace Toge.Battle
                 int damage = incoming - absorbed;
 
                 Lunge(enemy);
+                if (Toge.Core.AudioManager.Instance != null) Toge.Core.AudioManager.Instance.PlayAttack();
                 if (damage > 0)
                 {
                     _player.TakeDamage(damage);
                     PlayHitFx(_player, damage);
+                    if (!_player.IsAlive) PlayDeathFx(_player);
                 }
 
                 StateChanged?.Invoke();
@@ -155,8 +165,10 @@ namespace Toge.Battle
             if (target == null) return;
 
             Lunge(attacker);
+            if (Toge.Core.AudioManager.Instance != null) Toge.Core.AudioManager.Instance.PlayAttack();
             target.TakeDamage(damage);
             PlayHitFx(target, damage);
+            if (!target.IsAlive) PlayDeathFx(target);
         }
 
         private static void Lunge(BattleUnit unit)
@@ -171,6 +183,13 @@ namespace Toge.Battle
             if (unit == null) return;
             UnitHitFx fx = unit.GetComponent<UnitHitFx>();
             if (fx != null) fx.Play(damage);
+        }
+
+        private static void PlayDeathFx(BattleUnit unit)
+        {
+            if (unit == null) return;
+            UnitHitFx fx = unit.GetComponent<UnitHitFx>();
+            if (fx != null) fx.PlayDeath();
         }
 
         private IEnumerator DrawToHandSize()

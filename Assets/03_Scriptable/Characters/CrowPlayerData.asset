@@ -20,7 +20,10 @@ MonoBehaviour:
   skeleton: {fileID: 11400000, guid: d6d57afb65b843c49b4d65a5bbe724fb, type: 2}
   skin: 
   idleAnimation: idle
+  attackAnimation: attack001
+  deathAnimation: die
   visualScale: 0.23
+  facesRight: 0
   startingLevel: 1
   cards:
   - {fileID: 11400000, guid: 82fa64d0efd654a4382afad6322da6c6, type: 2}

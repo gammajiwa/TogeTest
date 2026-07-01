@@ -1,4 +1,6 @@
 using UnityEngine;
+using Spine.Unity;
+using Toge.Battle;
 
 namespace Toge.Core
 {
@@ -15,7 +17,18 @@ namespace Toge.Core
         private void Start()
         {
             _start = transform.position;
+            PlayMove();
             Face();
+        }
+
+        private void PlayMove()
+        {
+            var spine = GetComponentInChildren<SkeletonAnimation>();
+            if (spine == null || spine.Skeleton == null) return;
+
+            string move = SpineAnimResolver.ResolveClip(spine, spine.initialSkinName, "move", null);
+            if (!string.IsNullOrEmpty(move) && spine.Skeleton.Data.FindAnimation(move) != null)
+                spine.AnimationState.SetAnimation(0, move, true);
         }
 
         private void Update()

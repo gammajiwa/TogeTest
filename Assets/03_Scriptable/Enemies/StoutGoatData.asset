@@ -19,7 +19,9 @@ MonoBehaviour:
   speed: 11
   skeleton: {fileID: 11400000, guid: d81a0c6275c2da44c97cf1033c22ebf0, type: 2}
   skin: goat
-  idleAnimation: catpunk_idle_knife2
+  idleAnimation: goat_idle_gun
+  attackAnimation: goat_attack001_gun
+  deathAnimation: goat_die_gun
   visualScale: 0.32
   facesRight: 0
   expReward: 30

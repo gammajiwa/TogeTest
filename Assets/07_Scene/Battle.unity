@@ -580,7 +580,7 @@ MonoBehaviour:
   _handSize: 5
   _enemyTurnDelay: 0.7
   _drawDelay: 0.1
-  _projectileTravelTime: 0.28
+  _deathDelay: 0.85
 --- !u!4 &327385357
 Transform:
   m_ObjectHideFlags: 0
@@ -1635,7 +1635,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96

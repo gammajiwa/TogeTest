@@ -19,7 +19,9 @@ MonoBehaviour:
   speed: 13
   skeleton: {fileID: 11400000, guid: d81a0c6275c2da44c97cf1033c22ebf0, type: 2}
   skin: fox
-  idleAnimation: catpunk_idle_knife2
+  idleAnimation: fox_idle_axe
+  attackAnimation: fox_attack001_axe
+  deathAnimation: fox_die_axe
   visualScale: 0.32
   facesRight: 0
   expReward: 18

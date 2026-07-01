@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using Toge.Data;
 using Toge.Enums;
 using Toge.Events;
+using Toge.Variables;
 
 namespace Toge.Core
 {
@@ -16,6 +17,7 @@ namespace Toge.Core
 
         [SerializeField] private EncounterEventChannelSO _encounterChannel;
         [SerializeField] private BattleResultEventChannelSO _resultChannel;
+        [SerializeField] private EncounterAnchorSO _activeEncounter;
 
         private void OnEnable()
         {
@@ -42,7 +44,12 @@ namespace Toge.Core
 
         private void EnterBattle(EncounterSO encounter) => Activate(_battleScene);
 
-        private void ExitBattle(BattleResult result) => Activate(_overworldScene);
+        private void ExitBattle(BattleResult result)
+        {
+            if (result == BattleResult.Win && _activeEncounter != null && _activeEncounter.IsSet)
+                _activeEncounter.MarkCleared(_activeEncounter.Value);
+            Activate(_overworldScene);
+        }
 
         private void Activate(string sceneName)
         {

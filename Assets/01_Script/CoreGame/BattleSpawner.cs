@@ -108,6 +108,7 @@ namespace Toge.Battle
         {
             SkeletonAnimation sa = SkeletonAnimation.NewSkeletonAnimationGameObject(data.skeleton);
             GameObject go = sa.gameObject;
+            SceneManager.MoveGameObjectToScene(go, gameObject.scene);
             go.name = team + "_" + data.displayName;
             _spawnedObjects.Add(go);
 
@@ -115,6 +116,9 @@ namespace Toge.Battle
             if (!string.IsNullOrEmpty(data.idleAnimation)) sa.AnimationName = data.idleAnimation;
             sa.loop = true;
             sa.Initialize(true);
+
+            SpineAnimResolver.Resolve(sa, data.skin, out string idleAnim, out string attackAnim, out string deathAnim);
+            sa.AnimationState.SetAnimation(0, idleAnim, true);
 
             float s = Mathf.Max(0.0001f, data.visualScale);
             float scaleX = faceRight == data.facesRight ? s : -s;
@@ -131,7 +135,7 @@ namespace Toge.Battle
             unit.Init(data, team);
 
             int knockDir = team == BattleTeam.Player ? -1 : 1;
-            go.AddComponent<UnitHitFx>().Init(knockDir);
+            go.AddComponent<UnitHitFx>().Init(knockDir, idleAnim, attackAnim, deathAnim);
 
             float headHeight = renderer != null && renderer.bounds.size.y > 0.01f
                 ? renderer.bounds.size.y + 0.4f

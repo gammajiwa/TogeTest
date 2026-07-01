@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -24,12 +25,21 @@ namespace Toge.Battle
         [SerializeField] private GameObject _resultObject;
         [SerializeField] private TextMeshProUGUI _resultText;
 
+        private const float CardWidth = 150f;
+        private const float CardSpacing = 16f;
+        private const float DealStagger = 0.06f;
+
         private Camera _camera;
         private RectTransform _arrow;
         private BattleUnit _highlighted;
+        private readonly Dictionary<CardInstance, BattleCardView> _liveCards = new();
+        private readonly List<CardInstance> _removal = new();
+        private RectTransform _deckPile;
+        private RectTransform _discardPile;
 
         private void OnEnable()
         {
+            ClearHand();
             if (_battle == null) return;
             _battle.StateChanged += Refresh;
             _battle.PlayerTurnChanged += OnPlayerTurnChanged;
@@ -50,6 +60,14 @@ namespace Toge.Battle
         {
             _camera = GetComponent<Canvas>() != null ? GetComponent<Canvas>().worldCamera : null;
             if (_camera == null) _camera = Camera.main;
+
+            if (_cardHand != null)
+            {
+                var layout = _cardHand.GetComponent<HorizontalLayoutGroup>();
+                if (layout != null) layout.enabled = false;
+            }
+            if (_drawText != null) _deckPile = _drawText.transform.parent as RectTransform;
+            if (_discardText != null) _discardPile = _discardText.transform.parent as RectTransform;
 
             CreateArrow();
             if (_resultObject != null) _resultObject.SetActive(false);
@@ -90,14 +108,17 @@ namespace Toge.Battle
             BattleUnit target = _highlighted;
             ClearHighlight();
 
+            bool played = false;
             if (view.Card.Data.type == CardType.Defend)
             {
-                if (screenPos.y > Screen.height * 0.32f) _battle.PlayCard(view.Card, null);
+                if (screenPos.y > Screen.height * 0.32f) played = _battle.PlayCard(view.Card, null);
             }
             else if (target != null)
             {
-                _battle.PlayCard(view.Card, target);
+                played = _battle.PlayCard(view.Card, target);
             }
+
+            if (!played) view.ReturnToSlot();
         }
 
         private void UpdateArrow(Vector2 fromScreen, Vector2 toScreen)
@@ -170,38 +191,115 @@ namespace Toge.Battle
             if (_blockText != null) _blockText.text = _battle.Block > 0 ? $"BLOCK {_battle.Block}" : string.Empty;
             if (_drawText != null) _drawText.text = _battle.DrawCount.ToString();
             if (_discardText != null) _discardText.text = _battle.DiscardCount.ToString();
-            RebuildHand();
+            ReconcileHand();
         }
 
-        private void RebuildHand()
+        private void ReconcileHand()
         {
+            if (_cardHand == null) return;
+
+            bool playerTurn = _battle.IsPlayerTurn;
+
+            _removal.Clear();
+            foreach (var pair in _liveCards)
+                if (!playerTurn || !HandContains(pair.Key)) _removal.Add(pair.Key);
+
+            foreach (CardInstance card in _removal)
+            {
+                BattleCardView leaving = _liveCards[card];
+                _liveCards.Remove(card);
+                if (leaving == null) continue;
+                leaving.PlayDiscard(HandLocal(_discardPile), () => { if (leaving != null) Destroy(leaving.gameObject); });
+            }
+
+            if (!playerTurn) return;
+
+            int count = _battle.Hand.Count;
+            int dealt = 0;
+            for (int i = 0; i < count; i++)
+            {
+                CardInstance card = _battle.Hand[i];
+                Vector3 slot = SlotPosition(i, count);
+                bool affordable = _battle.Energy >= card.Data.cost;
+
+                BattleCardView view;
+                if (_liveCards.TryGetValue(card, out view))
+                {
+                    view.SetSlot(slot, true);
+                    view.SetAffordable(affordable);
+                }
+                else
+                {
+                    view = CreateCard(card, slot);
+                    _liveCards[card] = view;
+                    view.SetAffordable(affordable);
+                    view.PlayDeal(HandLocal(_deckPile), slot, dealt * DealStagger);
+                    dealt++;
+                }
+            }
+        }
+
+        private bool HandContains(CardInstance card)
+        {
+            IReadOnlyList<CardInstance> hand = _battle.Hand;
+            for (int i = 0; i < hand.Count; i++)
+                if (hand[i] == card) return true;
+            return false;
+        }
+
+        private void ClearHand()
+        {
+            _liveCards.Clear();
             if (_cardHand == null) return;
             for (int i = _cardHand.childCount - 1; i >= 0; i--)
                 Destroy(_cardHand.GetChild(i).gameObject);
-
-            if (!_battle.IsPlayerTurn) return;
-            foreach (CardInstance card in _battle.Hand)
-                CreateCard(card);
         }
 
-        private void CreateCard(CardInstance card)
+        private BattleCardView CreateCard(CardInstance card, Vector3 slot)
         {
             CardSO data = card.Data;
-            bool affordable = _battle.Energy >= data.cost;
 
             var go = new GameObject("Card_" + data.cardName, typeof(RectTransform));
             go.transform.SetParent(_cardHand, false);
-            go.GetComponent<RectTransform>().sizeDelta = new Vector2(150f, 200f);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(CardWidth, 200f);
+            rt.localPosition = slot;
 
-            var image = go.AddComponent<Image>();
-            image.color = affordable ? CardSO.RarityColor(data.rarity) : new Color(0.22f, 0.22f, 0.24f, 0.95f);
+            go.AddComponent<CanvasGroup>();
+            go.AddComponent<Image>();
 
             var view = go.AddComponent<BattleCardView>();
             view.Setup(card, this);
-            view.enabled = affordable;
 
             AddCost(go.transform, data.cost);
             AddLabel(go.transform, data);
+            return view;
+        }
+
+        private Vector3 SlotPosition(int index, int count)
+        {
+            float pitch = CardWidth + CardSpacing;
+            float totalWidth = count * CardWidth + (count - 1) * CardSpacing;
+            float firstX = -(totalWidth - CardWidth) * 0.5f;
+            return new Vector3(firstX + index * pitch, SlotCenterY(), 0f);
+        }
+
+        private Vector3 HandLocal(RectTransform pile)
+        {
+            if (pile == null || _cardHand == null) return new Vector3(0f, SlotCenterY(), 0f);
+            Vector3 local = _cardHand.InverseTransformPoint(pile.position);
+            local.z = 0f;
+            return local;
+        }
+
+        private float SlotCenterY()
+        {
+            if (_cardHand == null) return 0f;
+            float height = _cardHand.rect.height;
+            if (height <= 1f) height = _cardHand.sizeDelta.y;
+            return height * (0.5f - _cardHand.pivot.y);
         }
 
         private void AddCost(Transform parent, int cost)
@@ -246,7 +344,7 @@ namespace Toge.Battle
         {
             ClearHighlight();
             if (_arrow != null) _arrow.gameObject.SetActive(false);
-            RebuildHand();
+            ClearHand();
             if (_resultObject != null) _resultObject.SetActive(true);
             if (_resultText != null) _resultText.text = result == BattleResult.Win ? "VICTORY!" : "DEFEAT";
         }

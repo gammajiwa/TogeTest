@@ -19,6 +19,8 @@ namespace Toge.Data
         public SkeletonDataAsset skeleton;
         public string skin;
         public string idleAnimation = "idle";
+        public string attackAnimation = "attack001";
+        public string deathAnimation = "";
         public float visualScale = 0.25f;
         public bool facesRight = true;
     }

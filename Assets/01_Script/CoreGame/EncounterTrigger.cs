@@ -16,6 +16,21 @@ namespace Toge.Core
 
         private bool _fired;
 
+        private void OnEnable()
+        {
+            if (_activeEncounter != null && _activeEncounter.IsCleared(_encounter))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (_fired)
+            {
+                _fired = false;
+                if (_visual != null) _visual.SetActive(true);
+            }
+        }
+
         private void Update()
         {
             if (_fired || _playerAnchor == null || !_playerAnchor.IsSet) return;

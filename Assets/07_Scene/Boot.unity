@@ -154,6 +154,7 @@ MonoBehaviour:
   _loadUiScene: 0
   _encounterChannel: {fileID: 11400000, guid: 71b486104c4d44448864014d41c1a441, type: 2}
   _resultChannel: {fileID: 11400000, guid: ac783ae9fface7c478d4f6ef024f48f0, type: 2}
+  _activeEncounter: {fileID: 11400000, guid: db43c589664fc274dbd4f143fb5fe492, type: 2}
 --- !u!4 &273184980
 Transform:
   m_ObjectHideFlags: 0

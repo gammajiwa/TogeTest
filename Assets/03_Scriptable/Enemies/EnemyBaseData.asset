@@ -20,6 +20,8 @@ MonoBehaviour:
   skeleton: {fileID: 11400000, guid: d81a0c6275c2da44c97cf1033c22ebf0, type: 2}
   skin: wolf
   idleAnimation: catpunk_idle_knife2
+  attackAnimation: catpunk_attack001_knife2
+  deathAnimation: catpunk_die_knife2
   visualScale: 0.32
   facesRight: 0
   expReward: 20
